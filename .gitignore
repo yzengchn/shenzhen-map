@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.pnpm-store/
+.DS_Store
+.vercel
+.claude/
+package-lock.json
+
+# Local agent state (working memory, logs) — not project source
+.workbuddy/
+
+# Design-scaffold tooling metadata from the original upstream template
+.hallmark/

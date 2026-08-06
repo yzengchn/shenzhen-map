@@ -1,0 +1,1145 @@
+/* NYC AI Atlas · glass HUD
+   One font (Geist variable), four sizes (24 / 15 / 13 / 11),
+   frosted glass chrome floating over the 3D city. */
+
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/GeistVF.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  overflow-x: clip;
+}
+
+body {
+  background: var(--color-graphite);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 650;
+}
+
+strong,
+b {
+  font-weight: 600;
+}
+
+button,
+input,
+a {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.atlas-shell {
+  position: fixed;
+  inset: 0;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--color-water-deep);
+}
+
+#scene {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* Soft cinematic vignette while a company is in focus */
+.atlas-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: radial-gradient(
+    ellipse 72% 68% at 50% 46%,
+    transparent 58%,
+    oklch(22% 0.06 258 / 0.34) 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-long) var(--ease-out);
+}
+
+body.is-focused .atlas-shell::after {
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------- */
+/* Map labels                                                        */
+/* ---------------------------------------------------------------- */
+
+.labels-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.labels-layer img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+.marker-label {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 590;
+  gap: 0.4rem;
+  min-height: 28px;
+  max-width: min(16rem, 42vw);
+  padding: 3px 9px 3px 4px;
+  border: 1px solid oklch(100% 0 0 / 0.7);
+  border-radius: 7px;
+  background: oklch(99% 0.003 250 / 0.9);
+  color: var(--color-ink);
+  box-shadow: 0 8px 20px oklch(16% 0.02 258 / 0.16);
+  font-size: var(--fs-sm);
+  line-height: 1.1;
+  white-space: nowrap;
+  transform: translate(-50%, -110%);
+  pointer-events: auto;
+  cursor: pointer;
+  transition:
+    opacity var(--dur-short) var(--ease-out),
+    border-color var(--dur-short) var(--ease-out),
+    background-color var(--dur-short) var(--ease-out),
+    transform var(--dur-short) var(--ease-out);
+  will-change: transform, opacity;
+}
+
+.marker-label__logo {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  padding: 2px;
+  border: 1px solid var(--color-rule);
+  border-radius: 5px;
+  background: var(--color-paper);
+  object-fit: contain;
+}
+
+.marker-label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.marker-label small {
+  color: var(--label-color, var(--color-muted));
+  font-size: var(--fs-xs);
+  font-weight: 500;
+}
+
+.marker-label.is-selected,
+.marker-label:hover {
+  border-color: var(--color-accent);
+  background: var(--color-paper);
+  transform: translate(-50%, -118%);
+}
+
+/* Leader line connecting a pushed-up label back down to its pin */
+.marker-label::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 1.5px;
+  height: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--label-color, var(--color-accent)),
+    transparent
+  );
+  opacity: 0;
+  transform: translateX(-50%);
+  transition: opacity var(--dur-short) var(--ease-out);
+  pointer-events: none;
+}
+
+.marker-label.has-leader::after {
+  height: var(--leader, 0);
+  opacity: 0.7;
+}
+
+.marker-label.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.marker-label.is-hidden::after {
+  opacity: 0;
+}
+
+/* A selection dims every other label; out-of-area mute below still wins. */
+.marker-label.is-dimmed {
+  opacity: 0.5;
+}
+
+.marker-label.is-muted {
+  opacity: 0.36;
+}
+
+.context-label {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 550;
+  gap: 0.32rem;
+  max-width: 12rem;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: oklch(18% 0.018 258 / 0.74);
+  color: var(--color-accent-ink);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: translate(-50%, -115%);
+  pointer-events: none;
+}
+
+.landmark-label {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 550;
+  max-width: 9rem;
+  padding: 2px 7px;
+  border: 1px solid oklch(98% 0.004 250 / 0.4);
+  border-radius: 5px;
+  background: oklch(14% 0.018 258 / 0.68);
+  color: var(--color-accent-ink);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: translate(-50%, -115%);
+  pointer-events: none;
+  text-shadow: 0 1px 8px oklch(10% 0.02 258 / 0.4);
+  transition: opacity var(--dur-short) var(--ease-out);
+}
+
+/* ---------------------------------------------------------------- */
+/* Glass HUD chrome                                                  */
+/* ---------------------------------------------------------------- */
+
+.hud-left,
+.hud-top-right,
+.mini-map {
+  position: absolute;
+  z-index: 8;
+}
+
+.rail,
+.detail-card,
+.search-trigger,
+.icon-btn,
+.mini-map,
+.search-modal {
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Left column: navigation rail on top, contextual company card below. */
+.hud-left {
+  top: var(--space-md);
+  left: var(--space-md);
+  bottom: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 300px;
+  pointer-events: none;
+}
+
+.hud-left > * {
+  pointer-events: auto;
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  animation: hudInLeft var(--dur-long) var(--ease-out) backwards;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@keyframes hudInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+
+@keyframes hudInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 2px 2px 14px;
+  border-bottom: 1px solid oklch(20% 0.024 258 / 0.1);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.brand__mark {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  color: var(--color-ink);
+}
+
+.brand__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: var(--fs-xl);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.brand__sub {
+  color: var(--color-muted);
+  font-size: var(--fs-xs);
+}
+
+.area-list {
+  display: grid;
+  gap: 2px;
+  align-content: start;
+  padding: 12px 0;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+}
+
+.area-button {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink-2);
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out),
+    box-shadow var(--dur-short) var(--ease-out);
+}
+
+.area-button:hover {
+  background: oklch(20% 0.024 258 / 0.06);
+  color: var(--color-ink);
+}
+
+/* Area rows already communicate hover/focus with their background. Avoid the
+   global blue outline, which gets clipped by the scrolling rail. */
+.area-button:focus-visible {
+  outline: none;
+  background: oklch(20% 0.024 258 / 0.08);
+}
+
+.area-button:active {
+  transform: translateY(1px);
+}
+
+.area-button__number {
+  color: var(--color-muted);
+  font-size: var(--fs-xs);
+}
+
+.area-button__label {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.area-button__count {
+  min-width: 22px;
+  color: var(--color-muted);
+  font-size: var(--fs-xs);
+  text-align: right;
+}
+
+.area-button.is-active {
+  background: var(--color-accent-soft);
+  color: var(--color-ink);
+}
+
+.area-button.is-active .area-button__number {
+  color: var(--color-accent);
+}
+
+/* Active area description, inserted right below the selected row. */
+.area-desc {
+  margin: 2px 0 6px;
+  padding: 2px 8px 4px 32px;
+  color: var(--color-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  animation: hudInUp var(--dur-med) var(--ease-out) backwards;
+}
+
+.rail__foot {
+  display: grid;
+  gap: 9px;
+  padding-top: 12px;
+  border-top: 1px solid oklch(20% 0.024 258 / 0.1);
+}
+
+.pin-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  color: var(--color-ink-2);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+}
+
+.pin-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.pin-legend__item i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.rail__cta {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  margin-top: 2px;
+  padding: 0 10px;
+  border: 1px solid oklch(20% 0.024 258 / 0.14);
+  border-radius: var(--radius-sm);
+  background: oklch(100% 0 0 / 0.34);
+  color: var(--color-ink-2);
+  font-size: var(--fs-sm);
+  font-weight: 550;
+  text-decoration: none;
+  transition:
+    background-color var(--dur-short) var(--ease-out),
+    border-color var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out),
+    transform 140ms var(--ease-out);
+}
+
+.rail__cta svg {
+  width: 16px;
+  height: 16px;
+}
+
+.rail__cta-arrow {
+  color: var(--color-muted);
+  font-size: var(--fs-xs);
+  transition: color var(--dur-short) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rail__cta:hover {
+    border-color: var(--color-ink);
+    background: var(--color-ink);
+    color: var(--color-accent-ink);
+    transform: translateY(-1px);
+  }
+
+  .rail__cta:hover .rail__cta-arrow {
+    color: var(--color-accent-ink);
+  }
+}
+
+.rail__cta:active {
+  transform: scale(0.98);
+}
+
+.rail__cta:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.rail__hint,
+.rail__credit {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+}
+
+.rail__credit a {
+  color: var(--color-ink-2);
+  text-decoration-color: oklch(50% 0.02 258 / 0.5);
+  text-underline-offset: 0.2em;
+}
+
+.rail__credit a:hover {
+  color: var(--color-accent);
+}
+
+kbd {
+  display: inline-grid;
+  font-weight: 500;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  padding-inline: 4px;
+  border: 1px solid oklch(20% 0.024 258 / 0.16);
+  border-radius: 5px;
+  background: oklch(100% 0 0 / 0.55);
+  color: var(--color-ink-2);
+  font-size: var(--fs-xs);
+  line-height: 1;
+}
+
+/* ---------------------------------------------------------------- */
+/* Company detail card (below the rail)                              */
+/* ---------------------------------------------------------------- */
+
+.detail-card {
+  position: relative;
+  flex: 0 0 auto;
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  transition:
+    opacity var(--dur-med) var(--ease-out),
+    transform var(--dur-med) var(--ease-out);
+}
+
+.detail-card.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  position: absolute;
+  visibility: hidden;
+}
+
+.detail-card__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: var(--fs-md);
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out);
+}
+
+.detail-card__close:hover {
+  background: oklch(20% 0.024 258 / 0.07);
+  color: var(--color-ink);
+}
+
+.detail-card__head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  padding-right: 26px;
+}
+
+.detail-card__logo {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  padding: 4px;
+  border: 1px solid var(--color-rule);
+  border-radius: 9px;
+  background: var(--color-paper);
+  object-fit: contain;
+}
+
+.detail-card h2 {
+  margin: 0;
+  font-size: var(--fs-xl);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.detail-card__sector {
+  margin: 3px 0 0;
+  color: var(--color-accent);
+  font-size: var(--fs-xs);
+  font-weight: 550;
+}
+
+.detail-card__blurb {
+  margin: 11px 0 0;
+  color: var(--color-ink-2);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.detail-card__meta {
+  margin: 9px 0 0;
+  color: var(--color-muted);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+}
+
+.detail-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.detail-card__link,
+.detail-card__ghost {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  font-weight: 550;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: var(--fs-sm);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-short) var(--ease-out),
+    border-color var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out),
+    transform var(--dur-short) var(--ease-out);
+}
+
+.detail-card__link {
+  flex: 1 1 100%;
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+}
+
+.detail-card__link:hover {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  transform: translateY(-1px);
+}
+
+.detail-card__ghost {
+  border: 1px solid oklch(20% 0.024 258 / 0.16);
+  color: var(--color-ink-2);
+}
+
+.detail-card__ghost:hover {
+  border-color: var(--color-ink-2);
+  color: var(--color-ink);
+}
+
+/* First-run explore guide, shown in the card slot until dismissed */
+.onboard-title {
+  margin: 0 0 10px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.onboard {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onboard li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-ink-2);
+  font-size: var(--fs-sm);
+}
+
+.onboard__keys {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 3px;
+  min-width: 46px;
+}
+
+.onboard__click {
+  min-width: 46px;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+
+/* ---------------------------------------------------------------- */
+/* Search trigger + modal                                            */
+/* ---------------------------------------------------------------- */
+
+.hud-top-right {
+  top: var(--space-md);
+  right: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: hudInUp var(--dur-long) var(--ease-out) 80ms backwards;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 6px 8px 6px 12px;
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out);
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-md);
+  color: var(--color-ink-2);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out);
+}
+
+.icon-btn svg {
+  width: 19px;
+  height: 19px;
+}
+
+.search-trigger:hover,
+.icon-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.search-trigger__icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  color: var(--color-ink-2);
+}
+
+.search-modal {
+  width: min(38rem, calc(100vw - 2rem));
+  max-height: min(72dvh, 40rem);
+  margin: 14vh auto auto;
+  padding: 0;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-strong);
+  overflow: hidden;
+  color: var(--color-ink);
+}
+
+.search-modal::backdrop {
+  background: oklch(20% 0.03 258 / 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.search-modal[open] {
+  animation: modalPop var(--dur-med) var(--ease-out);
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: translateY(-0.6rem) scale(0.985);
+  }
+}
+
+.search-modal__bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid oklch(20% 0.024 258 / 0.1);
+}
+
+.search-modal__icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  color: var(--color-muted);
+}
+
+.search-modal__bar input {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font-size: var(--fs-md);
+}
+
+.search-modal__bar input::placeholder {
+  color: oklch(62% 0.02 258);
+}
+
+.search-modal__bar input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-modal__esc {
+  flex: 0 0 auto;
+}
+
+.search-results {
+  max-height: min(56dvh, 30rem);
+  overflow: auto;
+  padding: 8px;
+  scrollbar-width: thin;
+}
+
+.search-results:empty {
+  display: none;
+}
+
+.search-results__cta {
+  display: block;
+  padding: 10px;
+  border-top: 1px solid oklch(20% 0.024 258 / 0.08);
+  color: var(--color-accent);
+  font-size: var(--fs-sm);
+  font-weight: 550;
+  text-align: center;
+  text-decoration: none;
+}
+
+.search-results__cta:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.search-result {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.search-result__logo {
+  width: 28px;
+  height: 28px;
+  padding: 3px;
+  border: 1px solid var(--color-rule);
+  border-radius: 7px;
+  background: var(--color-paper);
+  object-fit: contain;
+}
+
+.search-result__body {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.search-result strong {
+  overflow: hidden;
+  font-size: var(--fs-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result__body > span {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: var(--fs-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result.is-active,
+.search-result:hover:not([disabled]) {
+  background: oklch(20% 0.024 258 / 0.06);
+}
+
+.search-result.is-active {
+  border-color: var(--color-accent);
+}
+
+.search-result:active {
+  transform: translateY(1px);
+}
+
+/* ---------------------------------------------------------------- */
+/* Mini map                                                          */
+/* ---------------------------------------------------------------- */
+
+.mini-map {
+  right: var(--space-md);
+  bottom: var(--space-md);
+  display: grid;
+  gap: 4px;
+  width: 118px;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  animation: hudInUp var(--dur-long) var(--ease-out) 160ms backwards;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mini-map svg {
+  width: 100%;
+  height: auto;
+}
+
+.mini-map__land,
+.mini-map__brooklyn,
+.mini-map__jersey {
+  fill: oklch(89% 0.028 92);
+  stroke: var(--color-ink-2);
+  stroke-width: 2;
+}
+
+.mini-map__brooklyn {
+  fill: oklch(84% 0.032 102);
+}
+
+.mini-map__jersey {
+  fill: oklch(78% 0.032 102);
+  opacity: 0.5;
+}
+
+.mini-point {
+  fill: var(--color-accent);
+  opacity: 0.5;
+}
+
+.mini-point.is-active {
+  fill: var(--color-danger);
+  opacity: 1;
+}
+
+.mini-map p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.14em;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- */
+/* Responsive                                                        */
+/* ---------------------------------------------------------------- */
+
+/* Touch layout: rail collapses into a bottom sheet with an area chip row;
+   the company card slides in as a sheet above it. */
+@media (max-width: 54rem) {
+  .hud-left {
+    top: auto;
+    left: var(--space-xs);
+    right: var(--space-xs);
+    bottom: var(--space-xs);
+    width: auto;
+    gap: 8px;
+  }
+
+  .rail {
+    padding: 10px 12px;
+  }
+
+  .brand {
+    gap: 8px;
+    padding: 0 0 8px;
+  }
+
+  .brand__mark {
+    width: 22px;
+    height: 22px;
+  }
+
+  .brand h1 {
+    font-size: var(--fs-md);
+  }
+
+  .brand__sub {
+    display: none;
+  }
+
+  .area-list {
+    display: flex;
+    gap: 6px;
+    padding: 8px 0 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .area-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .area-button {
+    display: inline-flex;
+    flex: 0 0 auto;
+    width: auto;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+    padding: 4px 12px;
+    border: 1px solid oklch(20% 0.024 258 / 0.14);
+    border-radius: 999px;
+  }
+
+  .area-button__number {
+    display: none;
+  }
+
+  .area-button__count {
+    min-width: 0;
+  }
+
+  .area-button.is-active {
+    box-shadow: none;
+    border-color: var(--color-accent);
+  }
+
+  .area-desc,
+  .rail__foot,
+  .mini-map,
+  .search-trigger__label,
+  .search-trigger kbd,
+  .detail-card.is-onboard {
+    display: none;
+  }
+
+  .detail-card {
+    order: -1;
+    max-height: 44dvh;
+    overflow: auto;
+  }
+
+  .search-trigger {
+    padding: 6px 10px;
+  }
+
+  .marker-label {
+    max-width: 52vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
