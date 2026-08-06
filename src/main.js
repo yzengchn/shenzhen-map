@@ -2,10 +2,10 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { AREAS, CONTEXT_POINTS, COMPANY_INFO, DATA_SOURCES, STARTUPS } from "./data.js";
 import {
-  MANHATTAN,
-  BROOKLYN_QUEENS,
-  ROOSEVELT_ISLAND,
-  JERSEY,
+  SZ_MAINLAND,
+  SZ_EAST,
+  DACHAN_ISLAND,
+  SZ_HK,
   HARBOR_ISLANDS,
   CENTRAL_PARK,
   CENTRAL_PARK_FEATURES,
@@ -114,7 +114,7 @@ const treeBuffer = []; // { x, z, type: "conifer"|"round", scale, rot, colorInde
 let hoverCandidate = null;
 let pointerDown = null; // { x, y, item } captured on pointerdown to tell clicks from drags
 
-// Greenery palette: a spread of NYC park greens for per-instance tree color.
+// Greenery palette: a spread of Shenzhen park greens for per-instance tree color.
 const GREEN_PALETTE = [
   0x3d6b39, 0x4a7d45, 0x557f42, 0x5e8a4c, 0x6d9a58, 0x7fa866, 0x4f7237,
 ].map((c) => new THREE.Color(c));
@@ -182,7 +182,7 @@ const materials = {
     roughness: 0.82,
     side: THREE.DoubleSide,
   }),
-  // Manhattan's ground plane IS the street surface; blocks sit on it as
+  // The mainland ground plane IS the street surface; blocks sit on it as
   // raised sidewalk plates, so streets need no line meshes at all.
   asphalt: new THREE.MeshStandardMaterial({
     color: 0x7a7e85,
@@ -574,7 +574,7 @@ function createStreetTrees() {
       const t = i / count;
       const lat = row.from[0] + (row.to[0] - row.from[0]) * t;
       const lng = row.from[1] + (row.to[1] - row.from[1]) * t;
-      if (!pointInPoly(lat, lng, MANHATTAN)) continue;
+      if (!pointInPoly(lat, lng, SZ_MAINLAND)) continue;
       if (pointInPoly(lat, lng, CENTRAL_PARK)) continue;
       const p = project(lat, lng);
       treeBuffer.push({
@@ -745,17 +745,17 @@ function createBaseMap() {
   scene.add(water);
   waterSurfaces.push(water);
 
-  makeShape(MANHATTAN, materials.asphalt, 0, true);
-  createShoreline(MANHATTAN);
+  makeShape(SZ_MAINLAND, materials.asphalt, 0, true);
+  createShoreline(SZ_MAINLAND);
 
-  makeShape(BROOKLYN_QUEENS, materials.landAlt, 0, true);
-  createShoreline(BROOKLYN_QUEENS);
+  makeShape(SZ_EAST, materials.landAlt, 0, true);
+  createShoreline(SZ_EAST);
 
-  makeShape(JERSEY, materials.land, 0, true);
-  createShoreline(JERSEY);
+  makeShape(SZ_HK, materials.land, 0, true);
+  createShoreline(SZ_HK);
 
-  makeShape(ROOSEVELT_ISLAND, materials.landAlt, 0.01, true);
-  createShoreline(ROOSEVELT_ISLAND);
+  makeShape(DACHAN_ISLAND, materials.landAlt, 0.01, true);
+  createShoreline(DACHAN_ISLAND);
 
   createHarborIslands();
   createParks();
@@ -882,22 +882,21 @@ function createSubwayTrainMesh(color = 0x169b62) {
   return group;
 }
 
-// Lines that run outdoors once they leave Manhattan (the 7 over Queens, the
-// L toward Williamsburg) climb onto elevated viaducts there, so overground
-// tracks visibly weave through the cityscape.
+// Lines that run outdoors once they leave the mainland climb onto elevated
+// viaducts outside the core, so overground tracks visibly weave through the cityscape.
 const ELEVATED_OUTSIDE = new Set(["7", "L"]);
 const VIADUCT_Y = 0.58;
 
 function trackY(line, lat, lng, baseY) {
-  const onManhattan = pointInPoly(lat, lng, MANHATTAN) || pointInPoly(lat, lng, ROOSEVELT_ISLAND);
-  if (onManhattan) return baseY;
-  const onFarBank = pointInPoly(lat, lng, BROOKLYN_QUEENS) || pointInPoly(lat, lng, JERSEY);
+  const onMainland = pointInPoly(lat, lng, SZ_MAINLAND) || pointInPoly(lat, lng, DACHAN_ISLAND);
+  if (onMainland) return baseY;
+  const onFarBank = pointInPoly(lat, lng, SZ_EAST) || pointInPoly(lat, lng, SZ_HK);
   if (onFarBank) return ELEVATED_OUTSIDE.has(line.name) ? VIADUCT_Y : baseY;
   return -0.62; // over open water: dive into a river tunnel
 }
 
 // Densely resampled route with a real vertical profile: surface ribbon on
-// Manhattan, a dip below the rivers, a viaduct on the far bank.
+// On the mainland, a dip below the rivers, a viaduct on the far bank.
 function subwayProfile(line, baseY) {
   const points = [];
   const elevated = [];
@@ -1141,7 +1140,7 @@ function createPlanes() {
 const ROAD_Y = 0.055;
 
 function streetAllowed(lat, lng) {
-  if (!pointInPoly(lat, lng, MANHATTAN)) return false;
+  if (!pointInPoly(lat, lng, SZ_MAINLAND)) return false;
   if (pointInPoly(lat, lng, CENTRAL_PARK)) return false;
   for (const park of PARKS) {
     if (pointInPoly(lat, lng, park)) return false;
@@ -1186,14 +1185,14 @@ function createStreetNetwork() {
 
   // Shoreline highways: west coast (Pearl River) and south coast (SZ Bay),
   // inset from the water.
-  const westShore = MANHATTAN.slice(0, 14)
+  const westShore = SZ_MAINLAND.slice(0, 14)
     .map(([lat, lng]) => [lat, lng + 0.0016])
-    .filter(([lat, lng]) => pointInPoly(lat, lng, MANHATTAN))
+    .filter(([lat, lng]) => pointInPoly(lat, lng, SZ_MAINLAND))
     .map(([lat, lng]) => project(lat, lng, ROAD_Y));
   if (westShore.length >= 4) paths.push(westShore);
-  const bayShore = MANHATTAN.slice(16, 26)
+  const bayShore = SZ_MAINLAND.slice(16, 26)
     .map(([lat, lng]) => [lat + 0.0016, lng])
-    .filter(([lat, lng]) => pointInPoly(lat, lng, MANHATTAN))
+    .filter(([lat, lng]) => pointInPoly(lat, lng, SZ_MAINLAND))
     .map(([lat, lng]) => project(lat, lng, ROAD_Y));
   if (bayShore.length >= 4) paths.push(bayShore);
 
@@ -1209,10 +1208,10 @@ function createStreetNetwork() {
 function buildingAllowed(lat, lng) {
   // Must be on a real landmass...
   const onLand =
-    pointInPoly(lat, lng, MANHATTAN) ||
-    pointInPoly(lat, lng, BROOKLYN_QUEENS) ||
-    pointInPoly(lat, lng, JERSEY) ||
-    pointInPoly(lat, lng, ROOSEVELT_ISLAND);
+    pointInPoly(lat, lng, SZ_MAINLAND) ||
+    pointInPoly(lat, lng, SZ_EAST) ||
+    pointInPoly(lat, lng, SZ_HK) ||
+    pointInPoly(lat, lng, DACHAN_ISLAND);
   if (!onLand) return false;
   // ...and not inside a park or Central Park.
   if (pointInPoly(lat, lng, CENTRAL_PARK)) return false;
@@ -1243,7 +1242,7 @@ function createBuildings() {
   const random = seededRandom(43);
   const instances = [];
 
-  // Manhattan buildings live INSIDE street blocks, aligned to the same
+  // Mainland buildings live INSIDE street blocks, aligned to the same
   // lattice the visible grid draws. Shared block placement is what makes the
   // city read as a real city instead of scattered boxes.
   const { uVec, vVec, uLen, vLen, rot: gridRot } = GRID_METRICS;
@@ -1362,7 +1361,7 @@ function createBuildings() {
     scene.add(ghostMesh);
   }
 
-  // Solid (Manhattan) buildings keep full detail: palette, roofs, windows.
+  // Solid (mainland) buildings keep full detail: palette, roofs, windows.
   instances.length = 0;
   instances.push(...solidBoxes);
 
@@ -1439,7 +1438,7 @@ function createBuildings() {
     color.copy(tone).offsetHSL(0, 0, (box.shade - 0.5) * 0.06);
     mesh.setColorAt(index, color);
 
-    // Classic NYC setback: taller towers step in for their top section.
+    // Classic setback: taller towers step in for their top section.
     const tiered = box.h > 2.6 && box.roof > 0.35;
     if (tiered) {
       tiers.push({
@@ -2676,8 +2675,8 @@ function updateClouds(delta) {
 }
 
 // Soft-edged translucent pads hovering low over the out-of-focus areas
-// (Brooklyn, Queens, Jersey): a cheap stand-in for depth-of-field blur that
-// keeps Manhattan crisp while the map's edges dissolve into atmosphere.
+// (eastern districts, Hong Kong side): a cheap stand-in for depth-of-field blur that
+// keeps the mainland crisp while the map's edges dissolve into atmosphere.
 // Company pins out there still poke above the haze.
 function makeHazeTexture() {
   const c = document.createElement("canvas");
@@ -2720,7 +2719,7 @@ function createHaze() {
   });
 }
 
-// Tiny walkers looping the sidewalk edges of the Manhattan blocks: one
+// Tiny walkers looping the sidewalk edges of the mainland blocks: one
 // instanced mesh, a couple hundred matrix updates per frame.
 function rectPerimeterPoint(t, hx, hz, out) {
   const perimeter = 4 * (hx + hz);
@@ -3429,7 +3428,7 @@ function bindEvents() {
     const tag = document.activeElement?.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA") return;
 
-    // ↑ / ↓ cycle through every view, wrapping between Brooklyn and Whole Board.
+    // ↑ / ↓ cycle through every view, wrapping between the east districts and Whole Board.
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       const current = Math.max(0, AREAS.findIndex((a) => a.id === state.activeAreaId));

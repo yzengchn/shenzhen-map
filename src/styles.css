@@ -999,18 +999,18 @@ kbd {
 }
 
 .mini-map__land,
-.mini-map__brooklyn,
-.mini-map__jersey {
+.mini-map__east,
+.mini-map__hk {
   fill: oklch(89% 0.028 92);
   stroke: var(--color-ink-2);
   stroke-width: 2;
 }
 
-.mini-map__brooklyn {
+.mini-map__east {
   fill: oklch(84% 0.032 102);
 }
 
-.mini-map__jersey {
+.mini-map__hk {
   fill: oklch(78% 0.032 102);
   opacity: 0.5;
 }

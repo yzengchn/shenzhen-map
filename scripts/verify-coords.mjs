@@ -1,8 +1,8 @@
-import { MANHATTAN, BROOKLYN_QUEENS, pointInPoly } from '../src/geo.js';
+import { SZ_MAINLAND, SZ_EAST, pointInPoly } from '../src/geo.js';
 import { STARTUPS } from '../src/data.js';
 
 // Combine all land polygons
-const LAND_POLYS = [MANHATTAN, BROOKLYN_QUEENS].filter(Boolean);
+const LAND_POLYS = [SZ_MAINLAND, SZ_EAST].filter(Boolean);
 
 function isOnLand(lat, lng) {
   return LAND_POLYS.some(poly => pointInPoly(lat, lng, poly));
@@ -46,10 +46,10 @@ for (const r of refs) {
 console.log('\n=== Shore highway slice verification ===');
 console.log('westShore slice(0, 11):');
 for (let i = 0; i < 11; i++) {
-  console.log(`  [${i}] ${JSON.stringify(MANHATTAN[i])}`);
+  console.log(`  [${i}] ${JSON.stringify(SZ_MAINLAND[i])}`);
 }
 console.log('bayShore slice(13, 23):');
 for (let i = 13; i < 23; i++) {
-  console.log(`  [${i}] ${JSON.stringify(MANHATTAN[i])}`);
+  console.log(`  [${i}] ${JSON.stringify(SZ_MAINLAND[i])}`);
 }
-console.log(`Total MANHATTAN points: ${MANHATTAN.length}`);
+console.log(`Total SZ_MAINLAND points: ${SZ_MAINLAND.length}`);

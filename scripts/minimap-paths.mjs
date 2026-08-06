@@ -1,8 +1,8 @@
 import {
-  MANHATTAN,
-  BROOKLYN_QUEENS,
-  JERSEY,
-  ROOSEVELT_ISLAND,
+  SZ_MAINLAND,
+  SZ_EAST,
+  SZ_HK,
+  DACHAN_ISLAND,
 } from "../src/geo.js";
 
 const VIEW_W = 160;
@@ -10,10 +10,10 @@ const VIEW_H = 120;
 const PAD = 8;
 
 const allPoints = [
-  ...MANHATTAN,
-  ...BROOKLYN_QUEENS,
-  ...JERSEY,
-  ...ROOSEVELT_ISLAND,
+  ...SZ_MAINLAND,
+  ...SZ_EAST,
+  ...SZ_HK,
+  ...DACHAN_ISLAND,
 ];
 
 // Match the miniMapPosition() bounds in src/main.js
@@ -40,11 +40,11 @@ function path(points) {
   return `M ${toSvg(points[0])} ` + points.slice(1).map((p) => `L ${toSvg(p)}`).join(" ") + " Z";
 }
 
-console.log("\nMANHATTAN (Shenzhen landmass):");
-console.log(path(MANHATTAN));
-console.log("\nBROOKLYN_QUEENS (Longgang/Pingshan):");
-console.log(path(BROOKLYN_QUEENS));
-console.log("\nJERSEY (Hong Kong sketch):");
-console.log(path(JERSEY));
-console.log("\nROOSEVELT_ISLAND (Dachan island):");
-console.log(path(ROOSEVELT_ISLAND));
+console.log("\nSZ_MAINLAND (Shenzhen landmass):");
+console.log(path(SZ_MAINLAND));
+console.log("\nSZ_EAST (Longgang/Pingshan):");
+console.log(path(SZ_EAST));
+console.log("\nSZ_HK (Hong Kong sketch):");
+console.log(path(SZ_HK));
+console.log("\nDACHAN_ISLAND (Dachan island):");
+console.log(path(DACHAN_ISLAND));

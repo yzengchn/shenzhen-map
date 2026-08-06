@@ -7,7 +7,7 @@
 
 // Core landmass: Bao'an -> Nanshan (Shekou peninsula) -> Futian -> Luohou,
 // traced clockwise from the northwest (Bao'an Pearl River mouth).
-export const MANHATTAN = [
+export const SZ_MAINLAND = [
   // West (Pearl River / Lingdingyang) side, north -> south
   [22.640, 113.815], // Bao'an NW (near Airport East coast)
   [22.615, 113.830], // Bao'an N (west of Hourui station 22.629, 113.836)
@@ -58,8 +58,8 @@ export const MANHATTAN = [
   [22.640, 113.850], // Bao'an NW
 ];
 
-// Outer boroughs (intentionally sparse + faded): Longgang / Pingshan to the NE.
-export const BROOKLYN_QUEENS = [
+// Eastern districts (intentionally sparse + faded): Longgang / Pingshan to the NE.
+export const SZ_EAST = [
   [22.612, 114.095], // Buji E
   [22.620, 114.140], // Longgang W
   [22.600, 114.180], // Longgang
@@ -69,7 +69,7 @@ export const BROOKLYN_QUEENS = [
 ];
 
 // Hong Kong side (New Territories, across Shenzhen Bay) — faded sketch only.
-export const JERSEY = [
+export const SZ_HK = [
   [22.455, 113.925], // Yuen Long N
   [22.448, 113.960], // Lau Fau Shan
   [22.458, 113.990], // Mai Po
@@ -78,7 +78,7 @@ export const JERSEY = [
 ];
 
 // Dachan Island (small, in the Pearl River mouth off Qianhai).
-export const ROOSEVELT_ISLAND = [
+export const DACHAN_ISLAND = [
   [22.545, 113.820],
   [22.550, 113.815],
   [22.548, 113.808],
