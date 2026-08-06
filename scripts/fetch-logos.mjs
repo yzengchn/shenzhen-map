@@ -98,7 +98,7 @@ function isSvgDocument(text) {
 async function fetchSimpleIcon(slug) {
   const response = await fetch(`https://cdn.simpleicons.org/${slug}`, {
     headers: {
-      "user-agent": "nyc-ai-atlas-logo-fetch/1.0",
+      "user-agent": "shenzhen-tech-map-logo-fetch/1.0",
     },
   });
   if (!response.ok) return null;
@@ -174,7 +174,7 @@ async function fetchLogoAsset(url, startup) {
   if (isGenericPlatformIcon(url)) return null;
   const response = await fetch(url, {
     headers: {
-      "user-agent": "nyc-ai-atlas-logo-fetch/1.0",
+      "user-agent": "shenzhen-tech-map-logo-fetch/1.0",
       accept: "image/svg+xml,image/png,image/webp,image/jpeg,image/x-icon,text/html;q=0.5,*/*;q=0.4",
     },
     redirect: "follow",
@@ -235,7 +235,7 @@ async function discoverSiteLogo(startup) {
   try {
     const homeResponse = await fetch(website, {
       headers: {
-        "user-agent": "nyc-ai-atlas-logo-fetch/1.0",
+        "user-agent": "shenzhen-tech-map-logo-fetch/1.0",
         accept: "text/html,*/*;q=0.5",
       },
       redirect: "follow",
@@ -261,7 +261,7 @@ async function discoverSiteLogo(startup) {
       try {
         const manifestResponse = await fetch(manifestUrl, {
           headers: {
-            "user-agent": "nyc-ai-atlas-logo-fetch/1.0",
+            "user-agent": "shenzhen-tech-map-logo-fetch/1.0",
             accept: "application/json,*/*;q=0.5",
           },
         });

@@ -10,7 +10,7 @@ const csvPath = path.join(outputDir, "company-addresses.csv");
 const mdPath = path.join(outputDir, "company-addresses.md");
 
 const NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/reverse";
-const USER_AGENT = "nyc-ai-atlas-address-report/1.0 (local development)";
+const USER_AGENT = "shenzhen-tech-map-address-report/1.0 (local development)";
 
 function csvEscape(value) {
   const text = String(value ?? "");
@@ -104,7 +104,7 @@ async function main() {
   ].join("\n");
 
   const markdown = [
-    "# NYC AI Atlas Company Address Report",
+    "# 深圳科技地图 Company Address Report",
     "",
     "Addresses are derived from the stored map-pin coordinates unless an explicit address is stored in the dataset. Coordinate-derived addresses verify the nearest mapped address for the pin, not the company's current lease or office occupancy.",
     "",
